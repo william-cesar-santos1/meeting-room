@@ -1,8 +1,14 @@
 # meeting-room
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+API de exemplo para a Aula 1 do projeto de reservas de salas com Quarkus.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+## Escopo da Aula 1
+
+- entidade `Room` com `id`, `name` e `capacity`
+- endpoint `POST /rooms`
+- endpoint `GET /rooms`
+- filtro opcional `GET /rooms?minCapacity=10`
+- script `rooms-demo.sh` com `curl` para demonstração em sala
 
 ## Running the application in dev mode
 
@@ -10,6 +16,46 @@ You can run your application in dev mode that enables live coding using:
 
 ```shell script
 ./mvnw quarkus:dev
+```
+
+Depois de subir a aplicação, a API ficará disponível em `http://localhost:8080`.
+
+## Endpoints disponíveis
+
+### Criar sala
+
+`POST /rooms`
+
+Exemplo de payload:
+
+```json
+{
+  "name": "Sala Java",
+  "capacity": 12
+}
+```
+
+### Listar salas
+
+`GET /rooms`
+
+### Filtrar por capacidade mínima
+
+`GET /rooms?minCapacity=15`
+
+## Script de demonstração
+
+Com a aplicação já em execução, rode:
+
+```bash
+chmod +x rooms-demo.sh
+./rooms-demo.sh
+```
+
+Se quiser apontar para outra URL base:
+
+```bash
+BASE_URL=http://localhost:8080 ./rooms-demo.sh
 ```
 
 > **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
