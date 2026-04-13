@@ -1,40 +1,38 @@
 package br.com.ada.classes.meetingroom.model;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
-public class Reservation {
+@Entity
+@Table(name = "reservations")
+public class Reservation extends PanacheEntityBase {
 
-    private Long id;
-    private Long roomId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long id;
+
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @JoinColumn(name = "room_id", nullable = false)
+    private Room room;
+
+    @Column(name = "guest_name", nullable = false)
     private String guestName;
+
+    @Column(name = "start_at", nullable = false)
     private LocalDateTime startAt;
+
+    @Column(name = "end_at", nullable = false)
     private LocalDateTime endAt;
 
-    public Reservation() {
+    public Room getRoom() {
+        return room;
     }
 
-    public Reservation(Long id, Long roomId, String guestName, LocalDateTime startAt, LocalDateTime endAt) {
-        this.id = id;
-        this.roomId = roomId;
-        this.guestName = guestName;
-        this.startAt = startAt;
-        this.endAt = endAt;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getRoomId() {
-        return roomId;
-    }
-
-    public void setRoomId(Long roomId) {
-        this.roomId = roomId;
+    public void setRoom(Room room) {
+        this.room = room;
     }
 
     public String getGuestName() {
@@ -61,4 +59,3 @@ public class Reservation {
         this.endAt = endAt;
     }
 }
-

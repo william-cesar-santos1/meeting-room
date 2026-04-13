@@ -1,28 +1,19 @@
 package br.com.ada.classes.meetingroom.resource.reservation;
 
 import br.com.ada.classes.meetingroom.model.Reservation;
+import br.com.ada.classes.meetingroom.resource.PageResponse;
 import br.com.ada.classes.meetingroom.service.ReservationService;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriInfo;
 
 import java.net.URI;
-import java.time.LocalDateTime;
-import java.util.List;
+import java.time.LocalDate;
 
 @Path("/reservations")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -33,35 +24,53 @@ public class ReservationResource {
     ReservationService reservationService;
 
     @GET
-    public List<Reservation> list(
+    public PageResponse<ReservationResponse> list(
             @QueryParam("roomId") Long roomId,
-            @QueryParam("date") String dateStr) {
-        if (dateStr != null && !dateStr.isBlank()) {
-            LocalDateTime date = LocalDateTime.parse(dateStr);
-            return reservationService.findByDate(date);
+            @QueryParam("date") LocalDate date,
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("size") @DefaultValue("10") int size) {
+        if (date != null) {
+            return PageResponse.from(
+                    reservationService.findByDate(
+                            date,
+                            page,
+                            size
+                    ), this::toResponse
+            );
         }
-        return reservationService.list(roomId);
+        return PageResponse.from(
+                reservationService.list(
+                        roomId,
+                        page,
+                        size
+                ), this::toResponse);
     }
 
     @GET
     @Path("/{id}")
-    public Reservation findById(@PathParam("id") Long id) {
-        return reservationService.findById(id);
+    public ReservationResponse findById(@PathParam("id") Long id) {
+        return toResponse(reservationService.findById(id));
     }
 
     @POST
     @Transactional
-    public Response create(@Valid CreateReservationRequest request, @Context UriInfo uriInfo) {
+    public Response create(
+            @Valid CreateReservationRequest request,
+            @Context UriInfo uriInfo
+    ) {
         Reservation reservation = reservationService.create(request);
-        URI location = uriInfo.getAbsolutePathBuilder().path(reservation.getId().toString()).build();
-        return Response.created(location).entity(reservation).build();
+        URI location = uriInfo.getAbsolutePathBuilder().path(reservation.id.toString()).build();
+        return Response.created(location).entity(toResponse(reservation)).build();
     }
 
     @PUT
     @Path("/{id}")
     @Transactional
-    public Reservation update(@PathParam("id") Long id, @Valid UpdateReservationRequest request) {
-        return reservationService.update(id, request);
+    public ReservationResponse update(
+            @PathParam("id") Long id,
+            @Valid UpdateReservationRequest request
+    ) {
+        return toResponse(reservationService.update(id, request));
     }
 
     @DELETE
@@ -69,7 +78,10 @@ public class ReservationResource {
     @Transactional
     public Response delete(@PathParam("id") Long id) {
         reservationService.delete(id);
-        return Response.status(Status.NO_CONTENT).build();
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
+    private ReservationResponse toResponse(Reservation reservation) {
+        return new ReservationResponse(reservation);
     }
 }
-

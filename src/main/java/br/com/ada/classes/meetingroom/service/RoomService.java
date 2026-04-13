@@ -1,74 +1,66 @@
 package br.com.ada.classes.meetingroom.service;
 
-
+import br.com.ada.classes.meetingroom.model.PageResult;
 import br.com.ada.classes.meetingroom.model.Room;
 import br.com.ada.classes.meetingroom.resource.room.CreateRoomRequest;
 import br.com.ada.classes.meetingroom.resource.room.UpdateRoomRequest;
+import io.quarkus.panache.common.Page;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 @ApplicationScoped
 public class RoomService {
 
-    private final Map<Long, Room> rooms = new ConcurrentHashMap<>();
-    private final AtomicLong sequence = new AtomicLong();
-
-    public List<Room> list(Integer minCapacity) {
-        return rooms.values().stream()
-                .filter(room -> minCapacity == null || room.getCapacity() >= minCapacity)
-                .sorted(Comparator.comparing(Room::getName, String.CASE_INSENSITIVE_ORDER).thenComparing(Room::getId))
-                .map(this::copy)
-                .toList();
+    public PageResult<Room> list(Integer minCapacity, int page, int size) {
+        var query = (minCapacity != null)
+                ? Room.find("capacity >= ?1", Sort.by("name"), minCapacity)
+                : Room.findAll(Sort.by("name"));
+        var result = query.page(Page.of(page, size));
+        return new PageResult<>(result.list(), page, size, result.count());
     }
 
-    public List<Room> findByName(String name) {
+    public PageResult<Room> findByName(String name, int page, int size) {
         if (name == null || name.isBlank()) {
-            return List.of();
+            return new PageResult<>(List.of(), page, size, 0);
         }
-        String searchTerm = name.toLowerCase().trim();
-        return rooms.values().stream()
-                .filter(room -> room.getName().toLowerCase().contains(searchTerm))
-                .sorted(Comparator.comparing(Room::getName, String.CASE_INSENSITIVE_ORDER))
-                .map(this::copy)
-                .toList();
+        String term = "%" + name.trim().toLowerCase() + "%";
+        var query = Room.find("LOWER(name) LIKE ?1", Sort.by("name"), term);
+        var result = query.page(Page.of(page, size));
+        return new PageResult<>(result.list(), page, size, result.count());
     }
 
     public Room findById(Long id) {
-        return copy(getRequiredRoom(id));
+        return getRequiredRoom(id);
     }
 
     public Room create(CreateRoomRequest request) {
         validateUniqueName(request.name(), null);
-        long id = sequence.incrementAndGet();
-        Room room = new Room(id, request.name().trim(), request.capacity());
-        rooms.put(id, room);
-        return copy(room);
+        Room room = new Room();
+        room.setName(request.name().trim());
+        room.setCapacity(request.capacity());
+        room.persist();
+        return room;
     }
 
     public Room update(Long id, UpdateRoomRequest request) {
-        Room existingRoom = getRequiredRoom(id);
+        Room room = getRequiredRoom(id);
         validateUniqueName(request.name(), id);
-        existingRoom.setName(request.name().trim());
-        existingRoom.setCapacity(request.capacity());
-        return copy(existingRoom);
+        room.setName(request.name().trim());
+        room.setCapacity(request.capacity());
+        return room;
     }
 
     public void delete(Long id) {
-        Room removedRoom = rooms.remove(id);
-        if (removedRoom == null) {
-            throw new NotFoundException("Room with id " + id + " was not found");
-        }
+        Room room = getRequiredRoom(id);
+        room.delete();
     }
 
     public Room getRequiredRoom(Long id) {
-        Room room = rooms.get(id);
+        Room room = Room.findById(id);
         if (room == null) {
             throw new NotFoundException("Room with id " + id + " was not found");
         }
@@ -76,16 +68,12 @@ public class RoomService {
     }
 
     private void validateUniqueName(String name, Long currentId) {
-        String normalizedName = name.trim();
-        boolean duplicated = rooms.values().stream()
-                .anyMatch(room -> room.getName().equalsIgnoreCase(normalizedName) && !room.getId().equals(currentId));
-        if (duplicated) {
+        String normalized = name.trim();
+        long count = (currentId == null)
+                ? Room.count("LOWER(name) = LOWER(?1)", normalized)
+                : Room.count("LOWER(name) = LOWER(?1) AND id != ?2", normalized, currentId);
+        if (count > 0) {
             throw new BadRequestException("A room with this name already exists");
         }
     }
-
-    private Room copy(Room room) {
-        return new Room(room.getId(), room.getName(), room.getCapacity());
-    }
 }
-

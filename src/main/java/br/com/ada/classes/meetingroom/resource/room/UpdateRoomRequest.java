@@ -1,6 +1,8 @@
 package br.com.ada.classes.meetingroom.resource.room;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+
 public record UpdateRoomRequest(
         @NotBlank(message = "Room name is required")
         String name,

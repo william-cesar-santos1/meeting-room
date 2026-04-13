@@ -1,19 +1,21 @@
 package br.com.ada.classes.meetingroom.service;
 
+import br.com.ada.classes.meetingroom.model.PageResult;
 import br.com.ada.classes.meetingroom.model.Reservation;
+import br.com.ada.classes.meetingroom.model.Room;
 import br.com.ada.classes.meetingroom.resource.reservation.CreateReservationRequest;
 import br.com.ada.classes.meetingroom.resource.reservation.UpdateReservationRequest;
+import io.quarkus.panache.common.Page;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Comparator;
+import java.time.LocalTime;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 @ApplicationScoped
 public class ReservationService {
@@ -21,99 +23,69 @@ public class ReservationService {
     @Inject
     RoomService roomService;
 
-    private final Map<Long, Reservation> reservations = new ConcurrentHashMap<>();
-    private final AtomicLong sequence = new AtomicLong();
-
-    public List<Reservation> list(Long roomId) {
-        return reservations.values().stream()
-                .filter(reservation -> roomId == null || reservation.getRoomId().equals(roomId))
-                .sorted(Comparator.comparing(Reservation::getStartAt)
-                        .thenComparing(Reservation::getId))
-                .map(this::copy)
-                .toList();
+    public PageResult<Reservation> list(Long roomId, int page, int size) {
+        var query = (roomId != null)
+                ? Reservation.find("room.id = ?1", Sort.by("startAt").and("id"), roomId)
+                : Reservation.findAll(Sort.by("startAt").and("id"));
+        var result = query.page(Page.of(page, size));
+        return new PageResult<>(result.list(), page, size, result.count());
     }
 
     public Reservation findById(Long id) {
-        return copy(getRequiredReservation(id));
-    }
-
-    public Reservation create(CreateReservationRequest request) {
-        validateRequest(request.roomId(), request.guestName(), request.startAt(), request.endAt());
-
-        long id = sequence.incrementAndGet();
-        Reservation reservation = new Reservation(
-                id,
-                request.roomId(),
-                request.guestName().trim(),
-                request.startAt(),
-                request.endAt()
-        );
-
-        reservations.put(id, reservation);
-        return copy(reservation);
-    }
-
-    public Reservation update(Long id, UpdateReservationRequest request) {
-        Reservation existingReservation = getRequiredReservation(id);
-        validateRequest(request.roomId(), request.guestName(), request.startAt(), request.endAt());
-
-        existingReservation.setRoomId(request.roomId());
-        existingReservation.setGuestName(request.guestName().trim());
-        existingReservation.setStartAt(request.startAt());
-        existingReservation.setEndAt(request.endAt());
-        return copy(existingReservation);
-    }
-
-    public void delete(Long id) {
-        Reservation removedReservation = reservations.remove(id);
-        if (removedReservation == null) {
-            throw new NotFoundException("Reservation with id " + id + " was not found");
-        }
-    }
-
-    public void deleteByRoomId(Long roomId) {
-        reservations.values().removeIf(reservation -> reservation.getRoomId().equals(roomId));
-    }
-
-    public List<Reservation> findByDate(LocalDateTime date) {
-        if (date == null) {
-            return List.of();
-        }
-        return reservations.values().stream()
-                .filter(r -> !r.getStartAt().isAfter(date) && !r.getEndAt().isBefore(date))
-                .sorted(Comparator.comparing(Reservation::getStartAt))
-                .map(this::copy)
-                .toList();
-    }
-
-    private Reservation getRequiredReservation(Long id) {
-        Reservation reservation = reservations.get(id);
+        Reservation reservation = Reservation.findById(id);
         if (reservation == null) {
             throw new NotFoundException("Reservation with id " + id + " was not found");
         }
         return reservation;
     }
 
-    private void validateRequest(Long roomId, String guestName, LocalDateTime startAt, LocalDateTime endAt) {
-        roomService.getRequiredRoom(roomId);
+    public Reservation create(CreateReservationRequest request) {
+        Room room = roomService.getRequiredRoom(request.roomId());
+        validateReservation(request.guestName(), request.startAt(), request.endAt());
 
+        Reservation reservation = new Reservation();
+        reservation.setRoom(room);
+        reservation.setGuestName(request.guestName().trim());
+        reservation.setStartAt(request.startAt());
+        reservation.setEndAt(request.endAt());
+        reservation.persist();
+        return reservation;
+    }
+
+    public Reservation update(Long id, UpdateReservationRequest request) {
+        Reservation reservation = findById(id);
+        Room room = roomService.getRequiredRoom(request.roomId());
+        validateReservation(request.guestName(), request.startAt(), request.endAt());
+
+        reservation.setRoom(room);
+        reservation.setGuestName(request.guestName().trim());
+        reservation.setStartAt(request.startAt());
+        reservation.setEndAt(request.endAt());
+        return reservation;
+    }
+
+    public void delete(Long id) {
+        Reservation reservation = findById(id);
+        reservation.delete();
+    }
+
+    public PageResult<Reservation> findByDate(LocalDate date, int page, int size) {
+        if (date == null) {
+            return new PageResult<>(List.of(), page, size, 0);
+        }
+        var query = Reservation.find("startAt <= ?1 AND endAt >= ?2", Sort.by("startAt"), date.atTime(LocalTime.MAX), date.atTime(LocalTime.MIN));
+        long total = query.count();
+        List<Reservation> reservations = query.page(Page.of(page, size)).list();
+        return new PageResult<>(reservations, page, size, total);
+    }
+
+    private void validateReservation(String guestName, LocalDateTime startAt, LocalDateTime endAt) {
         if (guestName == null || guestName.isBlank()) {
             throw new BadRequestException("Guest name is required");
         }
-
         if (!startAt.isBefore(endAt)) {
             throw new BadRequestException("Start date/time must be before end date/time");
         }
     }
 
-    private Reservation copy(Reservation reservation) {
-        return new Reservation(
-                reservation.getId(),
-                reservation.getRoomId(),
-                reservation.getGuestName(),
-                reservation.getStartAt(),
-                reservation.getEndAt()
-        );
-    }
 }
-

@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16.4
+    container_name: meeting_room_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: meeting_room
+      POSTGRES_USER: ada.tech
+      POSTGRES_PASSWORD: turma1660
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d:ro
+      - meeting_room_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ada.tech -d meeting_room"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  meeting_room_data:
+
+# ------------------------------------------------------------
+# Como usar:
+#   docker compose up -d
+#
+# Aguarde o container ficar healthy e então suba a aplicação:
+#   ./mvnw quarkus:dev
+#
+# application.properties (Quarkus):
+#   quarkus.datasource.db-kind=postgresql
+#   quarkus.datasource.username=ada.tech
+#   quarkus.datasource.password=turma1660
+#   quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/meeting_room
+#   quarkus.hibernate-orm.database.generation=none
+# ------------------------------------------------------------

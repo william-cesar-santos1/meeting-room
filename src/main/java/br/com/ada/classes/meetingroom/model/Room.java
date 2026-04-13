@@ -1,27 +1,35 @@
 package br.com.ada.classes.meetingroom.model;
 
-public class Room {
+import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.*;
+import org.hibernate.annotations.Formula;
 
-    private Long id;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "rooms")
+public class Room extends PanacheEntityBase {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long id;
+
+    @Column(unique = true, nullable = false)
     private String name;
+
+    @Column(nullable = false)
     private int capacity;
 
-    public Room() {
-    }
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Reservation> reservations = new ArrayList<>();
 
-    public Room(Long id, String name, int capacity) {
-        this.id = id;
-        this.name = name;
-        this.capacity = capacity;
-    }
+    @Formula("(SELECT COALESCE(v.horas_utilizadas, 0) FROM vw_room_occupancy v WHERE v.room_id = id)")
+    private double hoursUsed;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @Formula("(SELECT COALESCE(v.horas_reservadas, 0) FROM vw_room_occupancy v WHERE v.room_id = id)")
+    private double hoursReserved;
 
     public String getName() {
         return name;
@@ -38,5 +46,21 @@ public class Room {
     public void setCapacity(int capacity) {
         this.capacity = capacity;
     }
-}
 
+    public List<Reservation> getReservations() {
+        return reservations;
+    }
+
+    public void setReservations(List<Reservation> reservations) {
+        this.reservations = reservations;
+    }
+
+    public double getHoursUsed() {
+        return hoursUsed;
+    }
+
+    public double getHoursReserved() {
+        return hoursReserved;
+    }
+
+}
