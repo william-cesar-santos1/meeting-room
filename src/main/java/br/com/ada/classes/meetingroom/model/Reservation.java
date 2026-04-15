@@ -1,6 +1,5 @@
 package br.com.ada.classes.meetingroom.model;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 
@@ -20,6 +19,10 @@ public class Reservation extends PanacheEntityBase {
 
     @Column(name = "guest_name", nullable = false)
     private String guestName;
+
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @JoinColumn(name = "created_by", nullable = false)
+    private User createdBy;
 
     @Column(name = "start_at", nullable = false)
     private LocalDateTime startAt;
@@ -41,6 +44,14 @@ public class Reservation extends PanacheEntityBase {
 
     public void setGuestName(String guestName) {
         this.guestName = guestName;
+    }
+
+    public User getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(User createdBy) {
+        this.createdBy = createdBy;
     }
 
     public LocalDateTime getStartAt() {

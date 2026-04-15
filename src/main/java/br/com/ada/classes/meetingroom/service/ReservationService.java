@@ -1,8 +1,6 @@
 package br.com.ada.classes.meetingroom.service;
 
-import br.com.ada.classes.meetingroom.model.PageResult;
-import br.com.ada.classes.meetingroom.model.Reservation;
-import br.com.ada.classes.meetingroom.model.Room;
+import br.com.ada.classes.meetingroom.model.*;
 import br.com.ada.classes.meetingroom.resource.reservation.CreateReservationRequest;
 import br.com.ada.classes.meetingroom.resource.reservation.UpdateReservationRequest;
 import io.quarkus.panache.common.Page;
@@ -10,6 +8,7 @@ import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 
 import java.time.LocalDate;
@@ -22,6 +21,26 @@ public class ReservationService {
 
     @Inject
     RoomService roomService;
+
+    @Inject
+    CurrentUserService currentUserService;
+
+    private LoggedUser loggedUser() {
+        return currentUserService.getLoggedUser();
+    }
+
+    private void checkOwnership(Reservation reservation) {
+        if (loggedUser().isAdmin()) return;
+
+        Long ownerId = reservation.getCreatedBy().id;
+        Long currentId = loggedUser().id();
+
+        if (!currentId.equals(ownerId)) {
+            throw new ForbiddenException(
+                    "Acesso negado: apenas o criador da reserva ou um ADMIN pode executar esta acao"
+            );
+        }
+    }
 
     public PageResult<Reservation> list(Long roomId, int page, int size) {
         var query = (roomId != null)
@@ -43,17 +62,22 @@ public class ReservationService {
         Room room = roomService.getRequiredRoom(request.roomId());
         validateReservation(request.guestName(), request.startAt(), request.endAt());
 
+        User owner = User.findById(loggedUser().id());
+
         Reservation reservation = new Reservation();
         reservation.setRoom(room);
         reservation.setGuestName(request.guestName().trim());
         reservation.setStartAt(request.startAt());
         reservation.setEndAt(request.endAt());
+        reservation.setCreatedBy(owner);
         reservation.persist();
         return reservation;
     }
 
     public Reservation update(Long id, UpdateReservationRequest request) {
         Reservation reservation = findById(id);
+        checkOwnership(reservation);
+
         Room room = roomService.getRequiredRoom(request.roomId());
         validateReservation(request.guestName(), request.startAt(), request.endAt());
 
@@ -66,6 +90,7 @@ public class ReservationService {
 
     public void delete(Long id) {
         Reservation reservation = findById(id);
+        checkOwnership(reservation);
         reservation.delete();
     }
 
@@ -73,7 +98,12 @@ public class ReservationService {
         if (date == null) {
             return new PageResult<>(List.of(), page, size, 0);
         }
-        var query = Reservation.find("startAt <= ?1 AND endAt >= ?2", Sort.by("startAt"), date.atTime(LocalTime.MAX), date.atTime(LocalTime.MIN));
+        var query = Reservation.find(
+                "startAt <= ?1 AND endAt >= ?2",
+                Sort.by("startAt"),
+                date.atTime(LocalTime.MAX),
+                date.atTime(LocalTime.MIN)
+        );
         long total = query.count();
         List<Reservation> reservations = query.page(Page.of(page, size)).list();
         return new PageResult<>(reservations, page, size, total);
@@ -87,5 +117,4 @@ public class ReservationService {
             throw new BadRequestException("Start date/time must be before end date/time");
         }
     }
-
 }

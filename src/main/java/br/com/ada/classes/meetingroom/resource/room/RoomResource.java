@@ -3,6 +3,8 @@ package br.com.ada.classes.meetingroom.resource.room;
 import br.com.ada.classes.meetingroom.model.Room;
 import br.com.ada.classes.meetingroom.resource.PageResponse;
 import br.com.ada.classes.meetingroom.service.RoomService;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -26,6 +28,7 @@ public class RoomResource {
     RoomService roomService;
 
     @GET
+    @PermitAll
     public PageResponse<RoomResponse> list(
             @QueryParam("minCapacity") Integer minCapacity,
             @QueryParam("name") String name,
@@ -46,18 +49,17 @@ public class RoomResource {
 
     @GET
     @Path("/{id}")
+    @PermitAll
     public RoomResponse findById(
             @PathParam("id") Long id,
             @Context UriInfo uriInfo
     ) {
-        return toResponse(
-                roomService.findById(id),
-                uriInfo
-        );
+        return toResponse(roomService.findById(id), uriInfo);
     }
 
     @POST
     @Transactional
+    @RolesAllowed("ADMIN")
     public Response create(
             @Valid CreateRoomRequest request,
             @Context UriInfo uriInfo
@@ -74,20 +76,19 @@ public class RoomResource {
     @PUT
     @Path("/{id}")
     @Transactional
+    @RolesAllowed("ADMIN")
     public RoomResponse update(
             @PathParam("id") Long id,
             @Valid UpdateRoomRequest request,
             @Context UriInfo uriInfo
     ) {
-        return toResponse(
-                roomService.update(id, request),
-                uriInfo
-        );
+        return toResponse(roomService.update(id, request), uriInfo);
     }
 
     @DELETE
     @Path("/{id}")
     @Transactional
+    @RolesAllowed("ADMIN")
     public Response delete(@PathParam("id") Long id) {
         roomService.delete(id);
         return Response.status(Response.Status.NO_CONTENT).build();
@@ -97,10 +98,8 @@ public class RoomResource {
         return new RoomResponse(
                 room,
                 reservations(room),
-                links(
-                        room,
-                        uriInfo
-                )
+                links(room, uriInfo)
         );
     }
+
 }

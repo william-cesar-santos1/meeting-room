@@ -49,7 +49,8 @@ public record RoomResponse(
                         null,
                         it.getGuestName(),
                         it.getStartAt(),
-                        it.getEndAt()
+                        it.getEndAt(),
+                        it.getCreatedBy().getUsername()  // novo campo createdBy
                 )).toList();
     }
 

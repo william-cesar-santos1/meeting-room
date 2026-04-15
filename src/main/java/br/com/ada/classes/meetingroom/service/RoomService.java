@@ -76,4 +76,5 @@ public class RoomService {
             throw new BadRequestException("A room with this name already exists");
         }
     }
+
 }

@@ -3,6 +3,8 @@ package br.com.ada.classes.meetingroom.resource.reservation;
 import br.com.ada.classes.meetingroom.model.Reservation;
 import br.com.ada.classes.meetingroom.resource.PageResponse;
 import br.com.ada.classes.meetingroom.service.ReservationService;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -24,6 +26,7 @@ public class ReservationResource {
     ReservationService reservationService;
 
     @GET
+    @PermitAll
     public PageResponse<ReservationResponse> list(
             @QueryParam("roomId") Long roomId,
             @QueryParam("date") LocalDate date,
@@ -31,29 +34,25 @@ public class ReservationResource {
             @QueryParam("size") @DefaultValue("10") int size) {
         if (date != null) {
             return PageResponse.from(
-                    reservationService.findByDate(
-                            date,
-                            page,
-                            size
-                    ), this::toResponse
+                    reservationService.findByDate(date, page, size),
+                    this::toResponse
             );
         }
         return PageResponse.from(
-                reservationService.list(
-                        roomId,
-                        page,
-                        size
-                ), this::toResponse);
+                reservationService.list(roomId, page, size),
+                this::toResponse);
     }
 
     @GET
     @Path("/{id}")
+    @PermitAll
     public ReservationResponse findById(@PathParam("id") Long id) {
         return toResponse(reservationService.findById(id));
     }
 
     @POST
     @Transactional
+    @RolesAllowed({"USER", "ADMIN"})
     public Response create(
             @Valid CreateReservationRequest request,
             @Context UriInfo uriInfo
@@ -66,6 +65,7 @@ public class ReservationResource {
     @PUT
     @Path("/{id}")
     @Transactional
+    @RolesAllowed({"USER", "ADMIN"})
     public ReservationResponse update(
             @PathParam("id") Long id,
             @Valid UpdateReservationRequest request
@@ -76,6 +76,7 @@ public class ReservationResource {
     @DELETE
     @Path("/{id}")
     @Transactional
+    @RolesAllowed({"USER", "ADMIN"})
     public Response delete(@PathParam("id") Long id) {
         reservationService.delete(id);
         return Response.status(Response.Status.NO_CONTENT).build();
