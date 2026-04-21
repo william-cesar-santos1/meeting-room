@@ -1,0 +1,587 @@
+{
+  "title": "Meeting Room API",
+  "uid": "meeting-room-api",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "15s",
+  "time": { "from": "now-30m", "to": "now" },
+  "tags": ["meeting-room"],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Requisições - Salas (total acumulado)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "options": { "colorMode": "background", "graphMode": "area", "orientation": "auto" },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "rooms_list_count_total",
+          "legendFormat": "Listagens"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Requisições - Reservas (total acumulado)",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "options": { "colorMode": "background", "graphMode": "area", "orientation": "auto" },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "reservations_list_count_total",
+          "legendFormat": "Listagens"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "CPU em uso (%)",
+      "type": "gauge",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "minVizWidth": 75,
+        "minVizHeight": 75
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 0.8 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "system_cpu_usage",
+          "legendFormat": "CPU Sistema"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Memória Heap em uso (MB)",
+      "type": "gauge",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decmbytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 256 },
+              { "color": "red", "value": 512 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "jvm_memory_used_bytes{area=\"heap\"} / 1048576",
+          "legendFormat": "Heap Used"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Taxa de requisições por endpoint (req/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 4, "w": 24, "h": 8 },
+      "options": { "tooltip": { "mode": "multi" } },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(rooms_list_time_seconds_count[1m])",
+          "legendFormat": "GET /rooms"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(rooms_findById_time_seconds_count[1m])",
+          "legendFormat": "GET /rooms/{id}"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(rooms_create_time_seconds_count[1m])",
+          "legendFormat": "POST /rooms"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(rooms_update_time_seconds_count[1m])",
+          "legendFormat": "PUT /rooms/{id}"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(rooms_delete_time_seconds_count[1m])",
+          "legendFormat": "DELETE /rooms/{id}"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(reservations_list_time_seconds_count[1m])",
+          "legendFormat": "GET /reservations"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(reservations_findById_time_seconds_count[1m])",
+          "legendFormat": "GET /reservations/{id}"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(reservations_create_time_seconds_count[1m])",
+          "legendFormat": "POST /reservations"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(reservations_update_time_seconds_count[1m])",
+          "legendFormat": "PUT /reservations/{id}"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(reservations_delete_time_seconds_count[1m])",
+          "legendFormat": "DELETE /reservations/{id}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Latência P50 / P95 / P99 — Salas (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /rooms p50"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /rooms p95"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /rooms p99"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms/{id}\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /rooms/{id} p50"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms/{id}\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /rooms/{id} p95"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms/{id}\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /rooms/{id} p99"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Latência P50 / P95 / P99 — Reservas (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /reservations p50"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /reservations p95"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /reservations p99"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations/{id}\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /reservations/{id} p50"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations/{id}\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /reservations/{id} p95"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations/{id}\"}[1m])) by (le)) * 1000",
+          "legendFormat": "GET /reservations/{id} p99"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "JVM — Memória Heap (MB)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": { "unit": "decmbytes", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "jvm_memory_used_bytes{area=\"heap\"} / 1048576",
+          "legendFormat": "Heap Used"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "jvm_memory_committed_bytes{area=\"heap\"} / 1048576",
+          "legendFormat": "Heap Committed"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "jvm_memory_max_bytes{area=\"heap\"} / 1048576",
+          "legendFormat": "Heap Max"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "JVM — CPU e Threads",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "CPU Processo" },
+            "properties": [{ "id": "unit", "value": "percentunit" }, { "id": "custom.axisPlacement", "value": "right" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "CPU Sistema" },
+            "properties": [{ "id": "unit", "value": "percentunit" }, { "id": "custom.axisPlacement", "value": "right" }]
+          }
+        ],
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "jvm_threads_live_threads",
+          "legendFormat": "Threads Ativas"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "jvm_threads_daemon_threads",
+          "legendFormat": "Threads Daemon"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "process_cpu_usage",
+          "legendFormat": "CPU Processo"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "system_cpu_usage",
+          "legendFormat": "CPU Sistema"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "JVM — Garbage Collection (pausas/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 28, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(jvm_gc_pause_seconds_count[1m])",
+          "legendFormat": "GC Pausas/s ({{action}} {{cause}})"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "JVM — Tempo total de GC (ms/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 28, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "rate(jvm_gc_pause_seconds_sum[1m]) * 1000",
+          "legendFormat": "GC tempo ({{action}} {{cause}})"
+        }
+      ]
+    },
+
+    {
+      "id": 20,
+      "title": "Requisições HTTP por Status",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 36, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 21,
+      "title": "HTTP 200 — Sucesso (total acumulado)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 37, "w": 8, "h": 4 },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "green", "mode": "fixed" },
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(http_server_requests_seconds_count{status=\"200\"})",
+          "legendFormat": "200 OK"
+        }
+      ]
+    },
+
+    {
+      "id": 22,
+      "title": "HTTP 4xx — Erro do Cliente (total acumulado)",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 37, "w": 8, "h": 4 },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "orange", "mode": "fixed" },
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(http_server_requests_seconds_count{status=~\"4..\"})",
+          "legendFormat": "4xx"
+        }
+      ]
+    },
+
+    {
+      "id": 23,
+      "title": "HTTP 5xx — Erro do Servidor (total acumulado)",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 37, "w": 8, "h": 4 },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(http_server_requests_seconds_count{status=~\"5..\"})",
+          "legendFormat": "5xx"
+        }
+      ]
+    },
+
+    {
+      "id": 24,
+      "title": "Taxa de requisições por status HTTP (req/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 41, "w": 24, "h": 8 },
+      "options": { "tooltip": { "mode": "multi" } },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "200 OK" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "400 Bad Request" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "4xx (demais)" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "500 Internal Server Error" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "5xx (demais)" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "dark-red", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=\"200\"}[1m]))",
+          "legendFormat": "200 OK"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=\"400\"}[1m]))",
+          "legendFormat": "400 Bad Request"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..\", status!=\"400\"}[1m]))",
+          "legendFormat": "4xx (demais)"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=\"500\"}[1m]))",
+          "legendFormat": "500 Internal Server Error"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\", status!=\"500\"}[1m]))",
+          "legendFormat": "5xx (demais)"
+        }
+      ]
+    },
+
+    {
+      "id": 26,
+      "title": "Distribuição de requisições por status — Sucesso vs Falhas (%)",
+      "type": "piechart",
+      "gridPos": { "x": 0, "y": 49, "w": 12, "h": 8 },
+      "options": {
+        "pieType": "pie",
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["percent", "value"] }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "2xx Sucesso" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "4xx Cliente" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "5xx Servidor" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(increase(http_server_requests_seconds_count{status=~\"2..\"}[$__range]))",
+          "legendFormat": "2xx Sucesso"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(increase(http_server_requests_seconds_count{status=~\"4..\"}[$__range]))",
+          "legendFormat": "4xx Cliente"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(increase(http_server_requests_seconds_count{status=~\"5..\"}[$__range]))",
+          "legendFormat": "5xx Servidor"
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "title": "Distribuição de requisições por status — empilhado (req/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 57, "w": 24, "h": 8 },
+      "options": {
+        "tooltip": { "mode": "multi" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 70,
+            "stacking": { "mode": "normal", "group": "A" }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "2xx Sucesso" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "4xx Cliente" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "5xx Servidor" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"2..\"}[1m]))",
+          "legendFormat": "2xx Sucesso"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..\"}[1m]))",
+          "legendFormat": "4xx Cliente"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m]))",
+          "legendFormat": "5xx Servidor"
+        }
+      ]
+    }
+  ]
+}
+

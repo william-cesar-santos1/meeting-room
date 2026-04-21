@@ -1,0 +1,14 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "meeting-room-api"
+    metrics_path: /q/metrics
+    static_configs:
+      - targets:
+          - host.docker.internal:8080
+    relabel_configs:
+      - target_label: application
+        replacement: meeting-room
+
