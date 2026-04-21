@@ -1,0 +1,12 @@
+# Ignora tudo exceto o necessário para compilar
+*
+
+# Maven Wrapper
+!mvnw
+!.mvn/
+!.mvn/**
+
+# Projeto
+!pom.xml
+!src/
+!src/**

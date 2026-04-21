@@ -1,0 +1,32 @@
+# ---------------------------------------------------------------
+# Build Stage — compila o binário nativo dentro do container
+# (não precisa ter GraalVM instalado localmente)
+# ---------------------------------------------------------------
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
+USER root
+WORKDIR /build
+
+# Copia o Maven Wrapper e o pom primeiro (melhor uso do cache)
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -q
+
+# Copia o código fonte e compila o binário nativo
+COPY src ./src
+RUN ./mvnw package -Pnative -DskipTests -q -Dmaven.compiler.release=21
+
+# ---------------------------------------------------------------
+# Runtime Stage — imagem mínima para executar o binário nativo
+# ---------------------------------------------------------------
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.4
+
+WORKDIR /work
+RUN chown 1001 /work && chmod "g+rwX" /work
+
+COPY --from=build --chown=1001:root /build/target/*-runner /work/application
+
+EXPOSE 8080
+USER 1001
+
+ENTRYPOINT ["./application", "-Dquarkus.http.host=0.0.0.0"]
