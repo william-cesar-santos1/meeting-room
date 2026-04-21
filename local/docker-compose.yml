@@ -141,4 +141,10 @@ networks:
 #   App Native: http://localhost:8081
 #   Prometheus: http://localhost:9090
 #   Grafana:    http://localhost:3000  (admin / admin)
+
+# Endpoints de observabilidade:
+#   Métricas (Prometheus): http://localhost:8080/q/metrics
+#   Health:                http://localhost:8080/q/health
+#   Prometheus UI:         http://localhost:9090
+#   Grafana:               http://localhost:3000  (admin / admin)
 # ------------------------------------------------------------
