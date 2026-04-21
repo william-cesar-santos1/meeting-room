@@ -1,5 +1,8 @@
 package br.com.ada.classes.meetingroom.service;
 
+import br.com.ada.classes.meetingroom.exception.AccessDeniedException;
+import br.com.ada.classes.meetingroom.exception.BusinessException;
+import br.com.ada.classes.meetingroom.exception.ResourceNotFoundException;
 import br.com.ada.classes.meetingroom.model.*;
 import br.com.ada.classes.meetingroom.resource.reservation.CreateReservationRequest;
 import br.com.ada.classes.meetingroom.resource.reservation.UpdateReservationRequest;
@@ -7,9 +10,6 @@ import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.NotFoundException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -36,7 +36,7 @@ public class ReservationService {
         Long currentId = loggedUser().id();
 
         if (!currentId.equals(ownerId)) {
-            throw new ForbiddenException(
+            throw new AccessDeniedException(
                     "Acesso negado: apenas o criador da reserva ou um ADMIN pode executar esta acao"
             );
         }
@@ -53,7 +53,7 @@ public class ReservationService {
     public Reservation findById(Long id) {
         Reservation reservation = Reservation.findById(id);
         if (reservation == null) {
-            throw new NotFoundException("Reservation with id " + id + " was not found");
+            throw ResourceNotFoundException.ofId("Reservation", id);
         }
         return reservation;
     }
@@ -111,10 +111,10 @@ public class ReservationService {
 
     private void validateReservation(String guestName, LocalDateTime startAt, LocalDateTime endAt) {
         if (guestName == null || guestName.isBlank()) {
-            throw new BadRequestException("Guest name is required");
+            throw new BusinessException("Guest name is required");
         }
         if (!startAt.isBefore(endAt)) {
-            throw new BadRequestException("Start date/time must be before end date/time");
+            throw new BusinessException("Start date/time must be before end date/time");
         }
     }
 }
