@@ -1,5 +1,6 @@
 package br.com.ada.classes.meetingroom.service;
 
+import br.com.ada.classes.meetingroom.exception.AuthenticationException;
 import br.com.ada.classes.meetingroom.model.LoggedUser;
 import br.com.ada.classes.meetingroom.model.User;
 import br.com.ada.classes.meetingroom.resource.auth.TokenResponse;
@@ -9,7 +10,6 @@ import io.smallrye.jwt.build.Jwt;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotAuthorizedException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
@@ -34,7 +34,7 @@ public class AuthService implements CurrentUserService {
     @Override
     public LoggedUser getLoggedUser() {
         if (jwt.getName() == null) {
-            throw new NotAuthorizedException("Nenhum usuario autenticado na requisicao atual");
+            throw new AuthenticationException("Nenhum usuario autenticado na requisicao atual");
         }
 
         return new LoggedUser(
@@ -73,7 +73,7 @@ public class AuthService implements CurrentUserService {
                 && argon2.verify(user.getPassword(), password.toCharArray());
 
         if (!approve) {
-            throw new NotAuthorizedException("Credenciais invalidas");
+            throw new AuthenticationException("Credenciais invalidas");
         }
     }
 

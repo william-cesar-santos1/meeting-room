@@ -1,5 +1,7 @@
 package br.com.ada.classes.meetingroom.service;
 
+import br.com.ada.classes.meetingroom.exception.BusinessException;
+import br.com.ada.classes.meetingroom.exception.ResourceNotFoundException;
 import br.com.ada.classes.meetingroom.model.PageResult;
 import br.com.ada.classes.meetingroom.model.Room;
 import br.com.ada.classes.meetingroom.resource.room.CreateRoomRequest;
@@ -7,8 +9,6 @@ import br.com.ada.classes.meetingroom.resource.room.UpdateRoomRequest;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.NotFoundException;
 
 import java.util.List;
 
@@ -62,7 +62,7 @@ public class RoomService {
     public Room getRequiredRoom(Long id) {
         Room room = Room.findById(id);
         if (room == null) {
-            throw new NotFoundException("Room with id " + id + " was not found");
+            throw ResourceNotFoundException.ofId("Room", id);
         }
         return room;
     }
@@ -73,7 +73,7 @@ public class RoomService {
                 ? Room.count("LOWER(name) = LOWER(?1)", normalized)
                 : Room.count("LOWER(name) = LOWER(?1) AND id != ?2", normalized, currentId);
         if (count > 0) {
-            throw new BadRequestException("A room with this name already exists");
+            throw new BusinessException("A room with this name already exists");
         }
     }
 
