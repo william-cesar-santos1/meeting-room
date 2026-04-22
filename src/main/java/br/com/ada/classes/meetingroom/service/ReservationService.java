@@ -3,6 +3,7 @@ package br.com.ada.classes.meetingroom.service;
 import br.com.ada.classes.meetingroom.exception.AccessDeniedException;
 import br.com.ada.classes.meetingroom.exception.BusinessException;
 import br.com.ada.classes.meetingroom.exception.ResourceNotFoundException;
+import br.com.ada.classes.meetingroom.integration.holiday.HolidayService;
 import br.com.ada.classes.meetingroom.model.*;
 import br.com.ada.classes.meetingroom.resource.reservation.CreateReservationRequest;
 import br.com.ada.classes.meetingroom.resource.reservation.UpdateReservationRequest;
@@ -27,6 +28,9 @@ public class ReservationService {
 
     @Inject
     CurrentUserService currentUserService;
+
+    @Inject
+    HolidayService holidayService;
 
     private LoggedUser loggedUser() {
         return currentUserService.getLoggedUser();
@@ -71,6 +75,7 @@ public class ReservationService {
         LOG.infof("Criando reserva - roomId=%d, guestName='%s', startAt=%s, endAt=%s",
                 request.roomId(), request.guestName(), request.startAt(), request.endAt());
         Room room = roomService.getRequiredRoom(request.roomId());
+        holidayService.validateDate(request.startAt().toLocalDate());
         validateReservation(request.guestName(), request.startAt(), request.endAt());
 
         User owner = User.findById(loggedUser().id());
@@ -92,6 +97,7 @@ public class ReservationService {
         checkOwnership(reservation);
 
         Room room = roomService.getRequiredRoom(request.roomId());
+        holidayService.validateDate(request.startAt().toLocalDate());
         validateReservation(request.guestName(), request.startAt(), request.endAt());
 
         reservation.setRoom(room);
