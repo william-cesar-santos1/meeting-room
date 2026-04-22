@@ -12,11 +12,14 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.jboss.logging.Logger;
 
 import java.time.Duration;
 
 @ApplicationScoped
 public class AuthService implements CurrentUserService {
+
+    private static final Logger LOG = Logger.getLogger(AuthService.class);
 
     @ConfigProperty(name = "mp.jwt.verify.issuer")
     String issuer;
@@ -34,9 +37,10 @@ public class AuthService implements CurrentUserService {
     @Override
     public LoggedUser getLoggedUser() {
         if (jwt.getName() == null) {
+            LOG.warn("Tentativa de acesso sem usuário autenticado no contexto JWT");
             throw new AuthenticationException("Nenhum usuario autenticado na requisicao atual");
         }
-
+        LOG.debugf("Usuário autenticado obtido do token: username='%s'", jwt.getName());
         return new LoggedUser(
                 getUserId(),
                 jwt.getName(),
@@ -45,11 +49,11 @@ public class AuthService implements CurrentUserService {
         );
     }
 
-    private Long getUserId(){
+    private Long getUserId() {
         return Long.parseLong(jwt.getClaim("userId").toString());
     }
 
-    private String getRole(){
+    private String getRole() {
         return jwt.getGroups()
                 .stream()
                 .findFirst()
@@ -57,9 +61,11 @@ public class AuthService implements CurrentUserService {
     }
 
     public TokenResponse login(String username, String password) {
+        LOG.infof("Tentativa de login para username='%s'", username);
         User user = User.find("username", username).firstResult();
         validatePassword(user, password);
         String token = generateToken(user);
+        LOG.infof("Login bem-sucedido para username='%s'", username);
         return new TokenResponse(
                 token,
                 user.getUsername(),
@@ -73,6 +79,7 @@ public class AuthService implements CurrentUserService {
                 && argon2.verify(user.getPassword(), password.toCharArray());
 
         if (!approve) {
+            LOG.warnf("Falha de autenticação: credenciais inválidas");
             throw new AuthenticationException("Credenciais invalidas");
         }
     }
