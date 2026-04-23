@@ -1,0 +1,10 @@
+# Ignora tudo exceto o necessário para compilar
+*
+
+# Maven
+!pom.xml
+!src/
+
+# Garante que subdiretórios de src/ sejam incluídos
+!src/**
+

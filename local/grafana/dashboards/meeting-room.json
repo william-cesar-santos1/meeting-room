@@ -109,52 +109,52 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "rate(rooms_list_time_seconds_count[1m])",
+          "expr": "rate(rooms_list_time_seconds_count[$__rate_interval])",
           "legendFormat": "GET /rooms"
         },
         {
           "datasource": "Prometheus",
-          "expr": "rate(rooms_findById_time_seconds_count[1m])",
+          "expr": "rate(rooms_findById_time_seconds_count[$__rate_interval])",
           "legendFormat": "GET /rooms/{id}"
         },
         {
           "datasource": "Prometheus",
-          "expr": "rate(rooms_create_time_seconds_count[1m])",
+          "expr": "rate(rooms_create_time_seconds_count[$__rate_interval])",
           "legendFormat": "POST /rooms"
         },
         {
           "datasource": "Prometheus",
-          "expr": "rate(rooms_update_time_seconds_count[1m])",
+          "expr": "rate(rooms_update_time_seconds_count[$__rate_interval])",
           "legendFormat": "PUT /rooms/{id}"
         },
         {
           "datasource": "Prometheus",
-          "expr": "rate(rooms_delete_time_seconds_count[1m])",
+          "expr": "rate(rooms_delete_time_seconds_count[$__rate_interval])",
           "legendFormat": "DELETE /rooms/{id}"
         },
         {
           "datasource": "Prometheus",
-          "expr": "rate(reservations_list_time_seconds_count[1m])",
+          "expr": "rate(reservations_list_time_seconds_count[$__rate_interval])",
           "legendFormat": "GET /reservations"
         },
         {
           "datasource": "Prometheus",
-          "expr": "rate(reservations_findById_time_seconds_count[1m])",
+          "expr": "rate(reservations_findById_time_seconds_count[$__rate_interval])",
           "legendFormat": "GET /reservations/{id}"
         },
         {
           "datasource": "Prometheus",
-          "expr": "rate(reservations_create_time_seconds_count[1m])",
+          "expr": "rate(reservations_create_time_seconds_count[$__rate_interval])",
           "legendFormat": "POST /reservations"
         },
         {
           "datasource": "Prometheus",
-          "expr": "rate(reservations_update_time_seconds_count[1m])",
+          "expr": "rate(reservations_update_time_seconds_count[$__rate_interval])",
           "legendFormat": "PUT /reservations/{id}"
         },
         {
           "datasource": "Prometheus",
-          "expr": "rate(reservations_delete_time_seconds_count[1m])",
+          "expr": "rate(reservations_delete_time_seconds_count[$__rate_interval])",
           "legendFormat": "DELETE /reservations/{id}"
         }
       ]
@@ -170,32 +170,32 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /rooms p50"
         },
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /rooms p95"
         },
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /rooms p99"
         },
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms/{id}\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms/{id}\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /rooms/{id} p50"
         },
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms/{id}\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms/{id}\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /rooms/{id} p95"
         },
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms/{id}\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/rooms/{id}\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /rooms/{id} p99"
         }
       ]
@@ -211,32 +211,32 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /reservations p50"
         },
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /reservations p95"
         },
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /reservations p99"
         },
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations/{id}\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations/{id}\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /reservations/{id} p50"
         },
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations/{id}\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations/{id}\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /reservations/{id} p95"
         },
         {
           "datasource": "Prometheus",
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations/{id}\"}[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri=\"/reservations/{id}\"}[$__rate_interval])) by (le)) * 1000",
           "legendFormat": "GET /reservations/{id} p99"
         }
       ]
@@ -319,7 +319,7 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "rate(jvm_gc_pause_seconds_count[1m])",
+          "expr": "rate(jvm_gc_pause_seconds_count[$__rate_interval])",
           "legendFormat": "GC Pausas/s ({{action}} {{cause}})"
         }
       ]
@@ -335,7 +335,7 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "rate(jvm_gc_pause_seconds_sum[1m]) * 1000",
+          "expr": "rate(jvm_gc_pause_seconds_sum[$__rate_interval]) * 1000",
           "legendFormat": "GC tempo ({{action}} {{cause}})"
         }
       ]
@@ -461,27 +461,27 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(http_server_requests_seconds_count{status=\"200\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=\"200\"}[$__rate_interval]))",
           "legendFormat": "200 OK"
         },
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(http_server_requests_seconds_count{status=\"400\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=\"400\"}[$__rate_interval]))",
           "legendFormat": "400 Bad Request"
         },
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..\", status!=\"400\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..\", status!=\"400\"}[$__rate_interval]))",
           "legendFormat": "4xx (demais)"
         },
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(http_server_requests_seconds_count{status=\"500\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=\"500\"}[$__rate_interval]))",
           "legendFormat": "500 Internal Server Error"
         },
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\", status!=\"500\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\", status!=\"500\"}[$__rate_interval]))",
           "legendFormat": "5xx (demais)"
         }
       ]
@@ -567,17 +567,17 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"2..\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"2..\"}[$__rate_interval]))",
           "legendFormat": "2xx Sucesso"
         },
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..\"}[$__rate_interval]))",
           "legendFormat": "4xx Cliente"
         },
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[$__rate_interval]))",
           "legendFormat": "5xx Servidor"
         }
       ]
