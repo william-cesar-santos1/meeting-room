@@ -66,6 +66,7 @@ public class ReservationResource {
     @Transactional
     @RolesAllowed({"USER", "ADMIN"})
     @Timed(value = "reservations.create.time", description = "Tempo de processamento da criação de reserva")
+    @Counted(value = "reservations.create.count", description = "Número de criações de reservas")
     public Response create(
             @Valid CreateReservationRequest request,
             @Context UriInfo uriInfo
@@ -83,6 +84,7 @@ public class ReservationResource {
     @Transactional
     @RolesAllowed({"USER", "ADMIN"})
     @Timed(value = "reservations.update.time", description = "Tempo de processamento da atualização de reserva")
+    @Counted(value = "reservations.update.count", description = "Número de atualizações de reservas")
     public ReservationResponse update(
             @PathParam("id") Long id,
             @Valid UpdateReservationRequest request
@@ -96,6 +98,7 @@ public class ReservationResource {
     @Transactional
     @RolesAllowed({"USER", "ADMIN"})
     @Timed(value = "reservations.delete.time", description = "Tempo de processamento da exclusão de reserva")
+    @Counted(value = "reservations.delete.count", description = "Número de exclusões de reservas")
     public Response delete(@PathParam("id") Long id) {
         LOG.infof("DELETE /reservations/%d", id);
         reservationService.delete(id);

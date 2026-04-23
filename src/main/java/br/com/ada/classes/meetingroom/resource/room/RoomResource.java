@@ -73,6 +73,7 @@ public class RoomResource {
     @Transactional
     @RolesAllowed("ADMIN")
     @Timed(value = "rooms.create.time", description = "Tempo de processamento da criação de sala")
+    @Counted(value = "rooms.create.count", description = "Número de criações de salas")
     public Response create(
             @Valid CreateRoomRequest request,
             @Context UriInfo uriInfo
@@ -93,6 +94,7 @@ public class RoomResource {
     @Transactional
     @RolesAllowed("ADMIN")
     @Timed(value = "rooms.update.time", description = "Tempo de processamento da atualização de sala")
+    @Counted(value = "rooms.update.count", description = "Número de atualizações de salas")
     public RoomResponse update(
             @PathParam("id") Long id,
             @Valid UpdateRoomRequest request,
@@ -107,6 +109,7 @@ public class RoomResource {
     @Transactional
     @RolesAllowed("ADMIN")
     @Timed(value = "rooms.delete.time", description = "Tempo de processamento da exclusão de sala")
+    @Counted(value = "rooms.delete.count", description = "Número de exclusões de salas")
     public Response delete(@PathParam("id") Long id) {
         LOG.infof("DELETE /rooms/%d", id);
         roomService.delete(id);
