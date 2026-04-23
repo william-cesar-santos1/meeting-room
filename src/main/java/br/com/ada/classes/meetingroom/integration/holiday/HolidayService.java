@@ -1,6 +1,10 @@
 package br.com.ada.classes.meetingroom.integration.holiday;
 
 import br.com.ada.classes.meetingroom.exception.BusinessException;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -19,13 +23,17 @@ public class HolidayService {
     @Inject
     HolidayClientDelegate holidayClientDelegate;
 
+    @Inject
+    MeterRegistry meterRegistry;
+
     @ConfigProperty(name = "meeting-room.validation.holiday.enabled", defaultValue = "true")
     boolean holidayValidationEnabled;
 
     @ConfigProperty(name = "meeting-room.validation.weekend.enabled", defaultValue = "true")
     boolean weekendValidationEnabled;
 
-    public void validateDate(LocalDate date) {
+    @WithSpan("HolidayService.validateDate")
+    public void validateDate(@SpanAttribute("holiday.date") LocalDate date) {
         if (weekendValidationEnabled) {
             validateWeekend(date);
         } else {
@@ -50,7 +58,12 @@ public class HolidayService {
     }
 
     private void validateHoliday(LocalDate date) {
+        String year = String.valueOf(date.getYear());
+        meterRegistry.counter("holiday_cache_requests_total",
+                "year", year).increment();
+
         Set<LocalDate> holidays = fetchNationalHolidays(date.getYear());
+
         if (holidays.contains(date)) {
             LOG.infof("Tentativa de reserva em feriado nacional: %s", date);
             throw new BusinessException(
@@ -60,8 +73,12 @@ public class HolidayService {
     }
 
     @CacheResult(cacheName = "national-holidays")
-    public Set<LocalDate> fetchNationalHolidays(int year) {
+    @WithSpan("HolidayService.fetchNationalHolidays")
+    public Set<LocalDate> fetchNationalHolidays(@SpanAttribute("holiday.year") int year) {
         LOG.debugf("Cache miss para feriados do ano %d — delegando ao HolidayClientDelegate", year);
+        Span.current().setAttribute("holiday.cache.hit", false);
+        meterRegistry.counter("holiday_cache_miss_total",
+                "year", String.valueOf(year)).increment();
         return holidayClientDelegate.fetchNationalHolidays(year);
     }
 }

@@ -3,12 +3,13 @@ package br.com.ada.classes.meetingroom.integration.holiday;
 import br.com.ada.classes.meetingroom.exception.BusinessException;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
-import org.eclipse.microprofile.faulttolerance.FallbackHandler;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
@@ -23,19 +24,19 @@ public class HolidayClientDelegate {
 
     private static final Logger LOG = Logger.getLogger(HolidayClientDelegate.class);
 
+    @Inject
     @RestClient
     HolidayClient holidayClient;
 
     @Inject
     MeterRegistry meterRegistry;
 
-    @ConfigProperty(name = "meeting-room.integration.brasil-api.fallback.allow-continue", defaultValue = "true")
-    boolean fallbackAllowContinue;
-
+    @WithSpan("HolidayClientDelegate.fetchNationalHolidays")
     @Retry(abortOn = BusinessException.class)
     @Fallback(HolidayFallbackHandler.class)
-    public Set<LocalDate> fetchNationalHolidays(int year) {
+    public Set<LocalDate> fetchNationalHolidays(@SpanAttribute("holiday.year") int year) {
         LOG.infof("Chamando BrasilAPI para feriados do ano %d", year);
+        Span.current().setAttribute("holiday.source", "brasilapi");
 
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
@@ -50,6 +51,7 @@ public class HolidayClientDelegate {
                     .description("Tempo de resposta da BrasilAPI de feriados")
                     .tag("year", String.valueOf(year))
                     .tag("status", "success")
+                    .publishPercentileHistogram(true)
                     .register(meterRegistry));
 
             meterRegistry.counter("brasil_api_requests_total",
@@ -57,6 +59,7 @@ public class HolidayClientDelegate {
                             "status", "success")
                     .increment();
 
+            Span.current().setAttribute("holiday.national.count", nationalDates.size());
             LOG.infof("BrasilAPI retornou %d feriados nacionais para o ano %d", nationalDates.size(), year);
             return nationalDates;
 
@@ -65,6 +68,7 @@ public class HolidayClientDelegate {
                     .description("Tempo de resposta da BrasilAPI de feriados")
                     .tag("year", String.valueOf(year))
                     .tag("status", "error")
+                    .publishPercentileHistogram(true)
                     .register(meterRegistry));
 
             meterRegistry.counter("brasil_api_requests_total",
@@ -72,38 +76,10 @@ public class HolidayClientDelegate {
                             "status", "error")
                     .increment();
 
+            Span.current().setStatus(StatusCode.ERROR, e.getMessage());
+            Span.current().recordException(e);
             LOG.errorf(e, "Erro ao chamar BrasilAPI para feriados do ano %d (tentativa será refeita pelo @Retry)", year);
             throw e;
         }
     }
-
-    boolean isFallbackAllowContinue() {
-        return fallbackAllowContinue;
-    }
-
-    public static class HolidayFallbackHandler implements FallbackHandler<Set<LocalDate>> {
-
-        @Inject
-        HolidayClientDelegate delegate;
-
-        @Override
-        public Set<LocalDate> handle(ExecutionContext context) {
-            int year = (int) context.getParameters()[0];
-
-            delegate.meterRegistry.counter("brasil_api_fallback_total",
-                            "year", String.valueOf(year))
-                    .increment();
-
-            if (delegate.isFallbackAllowContinue()) {
-                LOG.warnf("Fallback ativado para BrasilAPI (ano=%d): allow-continue=true — validação de feriado ignorada", year);
-                return Set.of();
-            } else {
-                LOG.errorf("Fallback ativado para BrasilAPI (ano=%d): allow-continue=false — reserva bloqueada", year);
-                throw new BusinessException(
-                        "Não foi possível verificar os feriados nacionais. Tente novamente mais tarde."
-                );
-            }
-        }
-    }
 }
-

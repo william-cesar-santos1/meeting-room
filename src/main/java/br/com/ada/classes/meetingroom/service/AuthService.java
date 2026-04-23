@@ -6,6 +6,10 @@ import br.com.ada.classes.meetingroom.model.User;
 import br.com.ada.classes.meetingroom.resource.auth.TokenResponse;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.smallrye.jwt.build.Jwt;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -60,11 +64,14 @@ public class AuthService implements CurrentUserService {
                 .orElse("USER");
     }
 
-    public TokenResponse login(String username, String password) {
+    @WithSpan("AuthService.login")
+    public TokenResponse login(@SpanAttribute("auth.username") String username, String password) {
         LOG.infof("Tentativa de login para username='%s'", username);
         User user = User.find("username", username).firstResult();
         validatePassword(user, password);
         String token = generateToken(user);
+        Span.current().setAttribute("auth.user.id", user.id);
+        Span.current().setAttribute("auth.role", user.getRole().name());
         LOG.infof("Login bem-sucedido para username='%s'", username);
         return new TokenResponse(
                 token,
@@ -80,6 +87,8 @@ public class AuthService implements CurrentUserService {
 
         if (!approve) {
             LOG.warnf("Falha de autenticação: credenciais inválidas");
+            Span.current().setStatus(StatusCode.ERROR, "credenciais invalidas");
+            Span.current().setAttribute("auth.failed", true);
             throw new AuthenticationException("Credenciais invalidas");
         }
     }
