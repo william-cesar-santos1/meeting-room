@@ -3,6 +3,17 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
+  - job_name: "meeting-room-local"
+    metrics_path: /q/metrics
+    static_configs:
+      - targets:
+          - host.docker.internal:8080
+    relabel_configs:
+      - target_label: application
+        replacement: meeting-room
+      - target_label: runtime
+        replacement: local
+
   - job_name: "meeting-room-jvm"
     metrics_path: /q/metrics
     static_configs:
@@ -24,15 +35,3 @@ scrape_configs:
         replacement: meeting-room
       - target_label: runtime
         replacement: native
-
-  - job_name: "meeting-room-local"
-    metrics_path: /q/metrics
-    static_configs:
-      - targets:
-          - host.docker.internal:8080
-    relabel_configs:
-      - target_label: application
-        replacement: meeting-room
-      - target_label: runtime
-        replacement: local
-
