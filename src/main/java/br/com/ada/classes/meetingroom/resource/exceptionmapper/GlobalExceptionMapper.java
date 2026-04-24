@@ -1,24 +1,24 @@
 package br.com.ada.classes.meetingroom.resource.exceptionmapper;
 
-import br.com.ada.classes.meetingroom.exception.AccessDeniedException;
-import br.com.ada.classes.meetingroom.exception.AuthenticationException;
-import br.com.ada.classes.meetingroom.exception.BusinessException;
-import br.com.ada.classes.meetingroom.exception.ResourceNotFoundException;
+import br.com.ada.classes.meetingroom.exception.*;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import org.jboss.logging.Logger;
 
 import java.util.List;
 
 @Provider
 public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
 
+    private static final Logger LOG = Logger.getLogger(GlobalExceptionMapper.class);
     private static final int UNPROCESSABLE_ENTITY = 422;
 
     @Override
     public Response toResponse(Exception exception) {
+        LOG.error("Exception intercepted by GlobalExceptionMapper", exception);
         if (exception instanceof ResourceNotFoundException e) {
             return buildResponse(Response.Status.NOT_FOUND, "Not Found", e.getMessage());
         }
@@ -30,6 +30,9 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
         }
         if (exception instanceof AuthenticationException e) {
             return buildResponse(Response.Status.UNAUTHORIZED, "Unauthorized", e.getMessage());
+        }
+        if (exception instanceof IntegrationException e) {
+            return buildResponse(Response.Status.SERVICE_UNAVAILABLE, "Service Unavailable", e.getMessage());
         }
         if (exception instanceof ConstraintViolationException e) {
             List<String> messages = e.getConstraintViolations()

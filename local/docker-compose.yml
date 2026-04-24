@@ -11,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./init:/docker-entrypoint-initdb.d:ro
+      - ./postgres:/docker-entrypoint-initdb.d:ro
       - meeting_room_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ada.tech -d meeting_room"]
@@ -60,51 +60,71 @@ services:
     networks:
       - meeting-room-net
 
-  # ---------------------------------------------------------------
-  # Aplicação — build JVM
-  # Subir: docker compose --profile jvm up -d
-  # ---------------------------------------------------------------
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: meeting_room_jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC (recebe spans da aplicação)
+      - "4318:4318"     # OTLP HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - meeting-room-net
+
   meeting-room-jvm:
     profiles: ["jvm", "all"]
-    container_name: meeting_room_jvm
     build:
       context: ..
       dockerfile: docker/Dockerfile.jvm
     image: meeting-room:jvm
     restart: unless-stopped
-    ports:
-      - "8080:8080"
     environment:
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://postgres:5432/meeting_room
       QUARKUS_DATASOURCE_USERNAME: ada.tech
       QUARKUS_DATASOURCE_PASSWORD: turma1660
+      QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - meeting-room-net
+    deploy:
+      replicas: 3
 
-  # ---------------------------------------------------------------
-  # Aplicação — build Nativo
-  # Subir: docker compose --profile native up -d
-  # ---------------------------------------------------------------
   meeting-room-native:
     profiles: ["native", "all"]
-    container_name: meeting_room_native
     build:
       context: ..
       dockerfile: docker/Dockerfile.native
     image: meeting-room:native
     restart: unless-stopped
-    ports:
-      - "8081:8080"
     environment:
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://postgres:5432/meeting_room
       QUARKUS_DATASOURCE_USERNAME: ada.tech
       QUARKUS_DATASOURCE_PASSWORD: turma1660
+      QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4317
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - meeting-room-net
+    deploy:
+      replicas: 3
+
+  nginx:
+    profiles: ["jvm", "native", "all"]
+    image: nginx:1.27-alpine
+    container_name: meeting_room_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    volumes:
+      - ./nginx/nginx-${PROFILE}.conf:/etc/nginx/nginx.conf:ro
     networks:
       - meeting-room-net
 
@@ -116,29 +136,3 @@ volumes:
 networks:
   meeting-room-net:
     driver: bridge
-
-# ------------------------------------------------------------
-# Como usar:
-#
-#   Infraestrutura (banco + Prometheus + Grafana):
-#     docker compose up -d
-#
-#   Apenas build JVM (porta 8080):
-#     docker compose --profile jvm up -d
-#
-#   Apenas build Nativo (porta 8081):
-#     docker compose --profile native up -d
-#
-#   Ambos simultaneamente:
-#     docker compose --profile all up -d
-#
-#   Reconstruir imagens após mudanças no código:
-#     docker compose --profile jvm build
-#     docker compose --profile native build
-#
-# Endpoints:
-#   App JVM:    http://localhost:8080
-#   App Native: http://localhost:8081
-#   Prometheus: http://localhost:9090
-#   Grafana:    http://localhost:3000  (admin / admin)
-# ------------------------------------------------------------
