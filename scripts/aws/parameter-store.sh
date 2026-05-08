@@ -26,7 +26,9 @@ put_parameter() {
 # Hibernate ORM
 put_parameter "quarkus.datasource.username" "ada.tech" "String"
 put_parameter "quarkus.datasource.password" "turma1660" "SecureString"
-put_parameter "quarkus.datasource.jdbc.url" "jdbc:postgresql://localhost:5432/meeting_room" "String"
+put_parameter "quarkus.datasource.jdbc.url" "jdbc:postgresql://meeting_room_postgres:5432/meeting_room" "String"
+put_parameter "quarkus.datasource.jdbc.url" "jdbc:postgresql://meeting_room_postgres:5432/meeting_room" "String"
+put_parameter "quarkus.datasource.jdbc.telemetry" "true" "String"
 
 put_parameter "quarkus.hibernate-orm.database.generation" "none" "String"
 put_parameter "quarkus.hibernate-orm.log.sql" "false" "String"
@@ -48,7 +50,7 @@ put_parameter "quarkus.log.console.format" "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c
 # ---------------------------------------------------------------
 put_parameter "quarkus.otel.enabled" "true" "String"
 put_parameter "quarkus.otel.service.name" "meeting-room" "String"
-put_parameter "quarkus.otel.exporter.otlp.traces.endpoint" "http://localhost:4317" "String"
+put_parameter "quarkus.otel.exporter.otlp.traces.endpoint" "http://meeting_room_jaeger:4317" "String"
 # Para desabilitar em testes locais sem coletor OTLP, use: quarkus.otel.sdk.disabled=true
 put_parameter "quarkus.otel.traces.sampler" "always_on" "String"
 
@@ -112,6 +114,13 @@ put_parameter "HolidayClientDelegate/fetchNationalHolidays/Retry/durationUnit" "
 # TTL de 1 dia para evitar chamadas repetidas ? BrasilAPI
 # ---------------------------------------------------------------
 put_parameter "quarkus.cache.caffeine.national-holidays.expire-after-write" "P1D" "String"
+
+# ---------------------------------------------------------------
+# JWT - Configurações de segurança
+# ---------------------------------------------------------------
+put_parameter "mp.jwt.verify.issuer" "meeting-room-api" "String"
+put_parameter "mp.jwt.verify.publickey" "$(/usr/share/meeting-room-public-key.pem)" "String"
+put_parameter "smallrye.jwt.sign.key" "$(/usr/share/meeting-room-private-key.pem)" "SecureString"
 
 echo ">>> Parâmetros criados com sucesso:"
 aws ssm describe-parameters \

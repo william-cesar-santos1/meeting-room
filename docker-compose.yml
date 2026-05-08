@@ -11,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./postgres:/docker-entrypoint-initdb.d:ro
+      - ./scripts/postgres:/docker-entrypoint-initdb.d:ro
       - meeting_room_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ada.tech -d meeting_room"]
@@ -29,7 +29,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./scripts/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -52,8 +52,8 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./scripts/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./scripts/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
@@ -90,7 +90,8 @@ services:
       LOCALSTACK_HOST: localstack
       ENVIRONMENT: ${ENVIRONMENT:-dev}
     volumes:
-      - ./aws/parameter-store.sh:/etc/localstack/init/ready.d/parameter-store.sh:ro
+      - ./scripts/aws/parameter-store.sh:/etc/localstack/init/ready.d/parameter-store.sh:ro
+      - ./scripts/aws/keys:/usr/share/
       - localstack_data:/var/lib/localstack
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/health | grep '\"ssm\": *\"running\"'"]
@@ -105,7 +106,7 @@ services:
     profiles: ["jvm", "all"]
     build:
       context: ..
-      dockerfile: docker/Dockerfile.jvm
+      dockerfile: src/main/docker/Dockerfile.jvm
     image: meeting-room:jvm
     restart: unless-stopped
     environment:
@@ -127,7 +128,7 @@ services:
     profiles: ["native", "all"]
     build:
       context: ..
-      dockerfile: docker/Dockerfile.native
+      dockerfile: src/main/docker/Dockerfile.native
     image: meeting-room:native
     restart: unless-stopped
     environment:
@@ -154,7 +155,7 @@ services:
       - "8080:8080"
       - "8081:8081"
     volumes:
-      - ./nginx/nginx-${PROFILE}.conf:/etc/nginx/nginx.conf:ro
+      - ./scripts/nginx/nginx-${PROFILE}.conf:/etc/nginx/nginx.conf:ro
     networks:
       - meeting-room-net
 
