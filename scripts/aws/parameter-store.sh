@@ -119,8 +119,8 @@ put_parameter "quarkus.cache.caffeine.national-holidays.expire-after-write" "P1D
 # JWT - Configurações de segurança
 # ---------------------------------------------------------------
 put_parameter "mp.jwt.verify.issuer" "meeting-room-api" "String"
-put_parameter "mp.jwt.verify.publickey" "$(/usr/share/meeting-room-public-key.pem)" "String"
-put_parameter "smallrye.jwt.sign.key" "$(/usr/share/meeting-room-private-key.pem)" "SecureString"
+put_parameter "mp.jwt.verify.publickey" "$(cat /usr/share/localstack/keys/meeting-room-public-key.pem)" "String"
+put_parameter "smallrye.jwt.sign.key" "$(cat /usr/share/localstack/keys/meeting-room-private-key.pem)" "SecureString"
 
 echo ">>> Parâmetros criados com sucesso:"
 aws ssm describe-parameters \
